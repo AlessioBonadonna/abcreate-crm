@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "moduleResolution": "Bundler",
+    "baseUrl": ".",
+    "paths": { "~~/*": ["./*"], "~/*": ["./app/*"] },
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "include": [
+    "shared/**/*.ts",
+    "server/services/scoring.ts",
+    "server/services/dedup.ts",
+    "server/services/messaging.ts",
+    "server/services/analyzer.ts",
+    "server/services/providers/types.ts",
+    "server/services/providers/osm.ts",
+    "server/services/providers/places.ts",
+    "server/services/exporter.ts",
+    "scripts/verify.ts"
+  ]
+}
