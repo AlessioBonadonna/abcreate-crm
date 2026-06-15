@@ -30,9 +30,10 @@ interface PlaceResult {
   regularOpeningHours?: { weekdayDescriptions?: string[] }
 }
 
-function isChain(name: string): boolean {
+function isChain(name: string, category: string): boolean {
   const n = name.toLowerCase()
-  return KNOWN_CHAINS.some((c) => n.includes(c))
+  const list = [...(KNOWN_CHAINS._general ?? []), ...(KNOWN_CHAINS[category] ?? [])]
+  return list.some((c) => c && n.includes(c))
 }
 
 async function textSearch(query: string, apiKey: string): Promise<PlaceResult[]> {
@@ -65,7 +66,7 @@ function toRawLead(p: PlaceResult, categoryKey: string, city: string): RawLead |
     latitude: p.location?.latitude ?? null,
     longitude: p.location?.longitude ?? null,
     source: 'google_places',
-    isChain: isChain(name),
+    isChain: isChain(name, categoryKey),
     rating: p.rating ?? null,
     reviews: p.userRatingCount ?? null,
   }

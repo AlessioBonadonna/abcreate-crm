@@ -61,6 +61,24 @@ export function generateMessages(
   const problem = score.mainProblem ?? lead.mainProblem ?? 'ci sono margini di miglioramento sul sito'
   const weeks = settings.deliveryWeeks
 
+  // --- soft path: site already decent, or we couldn't analyze it (blocked) ---
+  // Never claim problems we didn't actually observe.
+  if (segment === 'decent_website' || segment === 'blocked') {
+    const waSoft = [
+      `Ciao ${lead.businessName}, ${hook}.`,
+      `Mi occupo di siti e mini-gestionali per attività come la vostra — esempi: ${portfolio}.`,
+      `Se vi serve una mano per migliorare il sito o aggiungere funzioni (prenotazioni, ordini, gestionale su misura), vi preparo due idee senza impegno.`,
+      `— ${settings.senderName}`,
+    ].join('\n\n')
+    const emailSoft = [
+      `Salve,`,
+      `mi occupo di siti e piccoli gestionali per attività locali come ${lead.businessName}.`,
+      `Se vi serve una mano per migliorare o rifare il sito, o per aggiungere funzioni (prenotazioni, ordini online, un gestionale su misura), posso prepararvi due proposte senza impegno. Qualche lavoro: ${portfolio}.`,
+      `Un saluto,\n${settings.senderName}`,
+    ].join('\n\n')
+    return { whatsapp: waSoft, email: { subject: `Una mano per il sito di ${lead.businessName}`, body: emailSoft } }
+  }
+
   // --- soft price line, depends on segment ---
   const priceLine =
     segment === 'no_website'

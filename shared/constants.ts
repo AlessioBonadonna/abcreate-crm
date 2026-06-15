@@ -6,19 +6,19 @@ import type { CategoryDef, PipelineStatus, Channel } from './types'
 // Italian trade, the closest practical tag(s) are used (noted in the README).
 // ---------------------------------------------------------------------------
 export const CATEGORIES: CategoryDef[] = [
-  { key: 'cleaning', label: 'Impresa di pulizie', osmTags: ['craft=cleaning', 'office=cleaning'], placesQuery: 'impresa di pulizie' },
-  { key: 'mechanic', label: 'Officina meccanica', osmTags: ['shop=car_repair'], placesQuery: 'officina meccanica auto' },
+  { key: 'cleaning', label: 'Impresa di pulizie', osmTags: ['office=cleaning', 'shop=cleaning', 'craft=cleaning'], placesQuery: 'impresa di pulizie' },
+  { key: 'mechanic', label: 'Officina meccanica', osmTags: ['shop=car_repair', 'craft=mechanic'], placesQuery: 'officina meccanica auto' },
   { key: 'body_shop', label: 'Carrozzeria', osmTags: ['shop=car_repair', 'craft=car_repair'], placesQuery: 'carrozzeria auto' },
   { key: 'plumber', label: 'Idraulico', osmTags: ['craft=plumber'], placesQuery: 'idraulico' },
   { key: 'electrician', label: 'Elettricista', osmTags: ['craft=electrician'], placesQuery: 'elettricista' },
   { key: 'hairdresser', label: 'Parrucchiere', osmTags: ['shop=hairdresser'], placesQuery: 'parrucchiere' },
-  { key: 'construction', label: 'Impresa edile', osmTags: ['craft=builder', 'office=construction_company', 'craft=construction'], placesQuery: 'impresa edile costruzioni' },
-  { key: 'restaurant', label: 'Ristorante', osmTags: ['amenity=restaurant'], placesQuery: 'ristorante' },
-  { key: 'gym', label: 'Palestra', osmTags: ['leisure=fitness_centre', 'leisure=sports_centre'], placesQuery: 'palestra' },
-  { key: 'personal_trainer', label: 'Personal trainer', osmTags: ['leisure=fitness_centre', 'office=personal_trainer'], placesQuery: 'personal trainer' },
+  { key: 'construction', label: 'Ditta edile', osmTags: ['office=company', 'craft=builder'], keywords: ['construction', 'building', 'edile', 'edilizia', 'costruzioni'], placesQuery: 'impresa edile costruzioni' },
+  { key: 'restaurant', label: 'Ristorante', osmTags: ['amenity=restaurant', 'amenity=fast_food'], placesQuery: 'ristorante' },
+  { key: 'gym', label: 'Palestra', osmTags: ['leisure=fitness_centre', 'sport=fitness'], placesQuery: 'palestra' },
+  { key: 'personal_trainer', label: 'Personal trainer', osmTags: ['leisure=fitness_centre', 'sport=fitness'], keywords: ['personal trainer', 'personal training'], placesQuery: 'personal trainer' },
   { key: 'real_estate', label: 'Agenzia immobiliare', osmTags: ['office=estate_agent'], placesQuery: 'agenzia immobiliare' },
-  { key: 'barber', label: 'Barbiere', osmTags: ['shop=hairdresser', 'shop=barber'], placesQuery: 'barbiere' },
-  { key: 'dentist', label: 'Dentista', osmTags: ['amenity=dentist', 'healthcare=dentist'], placesQuery: 'studio dentistico' },
+  { key: 'barber', label: 'Barbiere', osmTags: ['shop=barber'], placesQuery: 'barbiere' },
+  { key: 'dentist', label: 'Dentista', osmTags: ['amenity=dentist'], placesQuery: 'studio dentistico' },
 ]
 
 export const CATEGORY_BY_KEY: Record<string, CategoryDef> = Object.fromEntries(
@@ -26,27 +26,47 @@ export const CATEGORY_BY_KEY: Record<string, CategoryDef> = Object.fromEntries(
 )
 
 // ---------------------------------------------------------------------------
-// KNOWN_CHAINS — businesses to exclude (franchises / chains). Lowercased match.
+// KNOWN_CHAINS — businesses to exclude (franchises / chains), per category plus
+// a `_general` list. Ported verbatim from v1 config.py. Lowercased partial match.
 // ---------------------------------------------------------------------------
-export const KNOWN_CHAINS: string[] = [
-  // food
-  "mcdonald", 'burger king', 'kfc', 'old wild west', 'roadhouse', 'autogrill',
-  'spizzico', 'rossopomodoro', "domino", 'pizza hut', 'subway', 'starbucks',
-  'la piadineria', 'temakinho', 'wagamama', "chef express",
-  // supermarkets / retail
-  'conad', 'coop', 'esselunga', 'carrefour', 'lidl', 'eurospin', 'penny',
-  'pam ', 'despar', 'sigma', 'crai', 'md discount', 'tigros', 'bennet',
-  // gyms
-  'mcfit', 'virgin active', 'anytime fitness', 'get fit', 'fit express',
-  'fit924', 'mc fit',
-  // real estate
-  'tecnocasa', 'gabetti', 're/max', 'remax', 'toscano', 'grimaldi', 'professionecasa',
-  // hair / beauty
-  'jean louis david', 'compagnia della bellezza', 'toni&guy', 'franchising',
-  // auto
-  'euromaster', 'norauto', 'bosch car service', 'midas', 'carglass', 'speedy',
-  'first stop', 'pneusmarket',
-]
+export const KNOWN_CHAINS: Record<string, string[]> = {
+  _general: [
+    'mcdonald', 'burger king', 'kfc', 'subway', 'pizza hut', 'domino',
+    'starbucks', 'ikea', 'h&m', 'zara', 'primark', 'decathlon',
+  ],
+  gym: [
+    'virgin active', 'mcfit', 'fitactive', 'fit active', 'klab',
+    'bodytech', 'world class', 'anytime fitness', 'basic-fit', 'basic fit',
+    'planet fitness', 'palestra fit', 'i work out',
+  ],
+  restaurant: [
+    "old wild west", 'jeff', 'poke house', 'roadhouse', 'taco bell',
+    'five guys', 'nando', 'wagamama', 'spizzico', 'autogrill',
+    'chef express', 'brek',
+    "all'antico vinaio", 'antico vinaio',
+    'american diner', '1950 american diner',
+    'fratelli la bufala', 'la piadineria', 'dispensa emilia',
+    'be bop', 'sushi daily', 'temakinho', 'unico',
+    'alice pizza', 'pizza il mio saporé',
+  ],
+  real_estate: [
+    'tecnocasa', 're/max', 'remax', 'coldwell banker', 'century 21',
+    'engel & völkers', 'engel volkers', 'gabetti', 'grimaldi',
+    'bluescape',
+  ],
+  cleaning: [
+    'sodexo', 'iss facility', 'dussmann', 'servicemaster',
+    'rentokil', 'initial',
+  ],
+  hairdresser: [
+    'supercuts', 'great clips', 'jean louis david',
+  ],
+  barber: [],
+  dentist: [
+    'denti più', 'dentalmed', 'dentalpro', 'ortodonzia italiana',
+    'odontoiatria italia', 'vitaldent',
+  ],
+}
 
 // ---------------------------------------------------------------------------
 // CRM pipeline & channels

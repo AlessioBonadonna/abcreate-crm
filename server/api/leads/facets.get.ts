@@ -12,6 +12,6 @@ export default defineEventHandler(async () => {
     categories: CATEGORIES.map((c) => ({ key: c.key, label: c.label })),
     statuses: PIPELINE_STATUSES,
     priorities: ['HIGH', 'MEDIUM', 'LOW'],
-    segments: ['no_website', 'weak_website', 'decent_website'],
+    segments: ['no_website', 'weak_website', 'decent_website', 'blocked'],
   }
 })

@@ -61,6 +61,17 @@ async function copy(text: string, markSent = false) {
   await navigator.clipboard.writeText(text)
   if (markSent) await logActivity('messaggio_inviato', channel.value === 'whatsapp' ? 'WhatsApp' : 'Email')
 }
+const analyzing = ref(false)
+async function reanalyze() {
+  analyzing.value = true
+  try {
+    await $fetch(`/api/leads/${id}/reanalyze`, { method: 'POST' })
+    await refresh()
+    await refreshMsg()
+  } finally {
+    analyzing.value = false
+  }
+}
 async function removeLead() {
   if (!confirm(`Eliminare definitivamente "${lead.value?.businessName}"? L'azione non è reversibile.`)) return
   await $fetch(`/api/leads/${id}`, { method: 'DELETE' })
@@ -117,7 +128,12 @@ async function removeLead() {
         </div>
 
         <div class="card text-sm">
-          <h2 class="font-semibold text-slate-800">Problemi rilevati</h2>
+          <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-slate-800">Problemi rilevati</h2>
+            <button v-if="lead.website" class="btn-ghost text-xs" :disabled="analyzing" @click="reanalyze">
+              {{ analyzing ? 'Analisi…' : '↻ Rianalizza' }}
+            </button>
+          </div>
           <ul v-if="lead.detectedProblems.length" class="mt-2 space-y-1">
             <li v-for="p in lead.detectedProblems" :key="p" class="flex gap-2 text-slate-600">
               <span class="text-red-500">•</span>{{ p }}

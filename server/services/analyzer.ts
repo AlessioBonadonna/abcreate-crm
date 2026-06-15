@@ -1,8 +1,9 @@
 import * as cheerio from 'cheerio'
 import type { SiteAnalysis } from '~~/shared/types'
 
+// Realistic browser UA — many sites/WAFs return 403 to non-browser agents.
 const UA =
-  'Mozilla/5.0 (compatible; AB-Create-CRM/1.0; +https://abcreate.it) site-analyzer'
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 const TIMEOUT_MS = 12000
 
 function emptyAnalysis(loadError: string | null): SiteAnalysis {
@@ -54,7 +55,11 @@ export async function analyzeWebsite(website: string): Promise<SiteAnalysis> {
     res = await fetch(url, {
       redirect: 'follow',
       signal: controller.signal,
-      headers: { 'User-Agent': UA, Accept: 'text/html,*/*' },
+      headers: {
+        'User-Agent': UA,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'it-IT,it;q=0.9,en;q=0.8',
+      },
     })
   } catch (err) {
     clearTimeout(timer)
@@ -102,6 +107,8 @@ export async function analyzeWebsite(website: string): Promise<SiteAnalysis> {
     lowerHtml.includes('google.com/maps') ||
     lowerHtml.includes('maps.google') ||
     lowerHtml.includes('maps.googleapis') ||
+    lowerHtml.includes('maps.app.goo.gl') ||
+    lowerHtml.includes('goo.gl/maps') ||
     $('iframe[src*="google.com/maps"]').length > 0
 
   const hasContactForm =

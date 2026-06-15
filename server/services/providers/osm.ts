@@ -23,12 +23,17 @@ interface OverpassElement {
   tags?: Record<string, string>
 }
 
-function isChainName(name: string, tags: Record<string, string>): boolean {
+/** Chain/franchise detection — ported from v1 discovery._is_chain. */
+function isChainName(name: string, tags: Record<string, string>, category: string): boolean {
+  // certain signals: wikidata/wikipedia brand → international brand
+  if (tags['brand:wikidata'] || tags['brand:wikipedia']) return true
+  // brand tag different from the name (e.g. brand=Virgin Active, name=Virgin Active Milano)
+  const brand = (tags.brand ?? '').trim().toLowerCase()
   const n = name.toLowerCase()
-  if (KNOWN_CHAINS.some((c) => n.includes(c))) return true
-  // a `brand` tag almost always indicates a chain/franchise
-  if (tags.brand || tags['brand:wikidata']) return true
-  return false
+  if (brand && !n.includes(brand)) return true
+  // name blocklist: _general + category-specific
+  const list = [...(KNOWN_CHAINS._general ?? []), ...(KNOWN_CHAINS[category] ?? [])]
+  return list.some((c) => c && n.includes(c))
 }
 
 function composeAddress(tags: Record<string, string>): string | null {
@@ -129,8 +134,19 @@ function toRawLead(el: OverpassElement, categoryKey: string, city: string): RawL
     latitude: lat,
     longitude: lon,
     source: 'openstreetmap',
-    isChain: isChainName(name, tags),
+    isChain: isChainName(name, tags, categoryKey),
   }
+}
+
+/**
+ * v1 keyword filter: broad tags (office=company) are kept only if the element's
+ * tags contain one of the category keywords. Non-generic matches pass through.
+ */
+function passesKeywordFilter(tags: Record<string, string>, keywords?: string[]): boolean {
+  if (!keywords || keywords.length === 0) return true
+  if (tags.office !== 'company') return true // filter only applies to the generic tag
+  const s = JSON.stringify(tags).toLowerCase()
+  return keywords.some((kw) => s.includes(kw))
 }
 
 export class OsmProvider implements LeadProvider {
@@ -181,6 +197,7 @@ export class OsmProvider implements LeadProvider {
             const key = `${el.type}/${el.id}`
             if (seen.has(key)) continue
             seen.add(key)
+            if (!passesKeywordFilter(el.tags ?? {}, cat.keywords)) continue
             const lead = toRawLead(el, catKey, city)
             if (lead) results.push(lead)
           }

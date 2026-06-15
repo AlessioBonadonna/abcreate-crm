@@ -20,7 +20,7 @@ function check(name: string, cond: boolean) {
 
 function analysis(over: Partial<SiteAnalysis>): SiteAnalysis {
   return {
-    httpStatus: 200, hasHttps: true, pageTitle: 'x', metaDescription: 'x',
+    httpStatus: 200, hasHttps: true, pageTitle: 'Titolo Sito', metaDescription: 'descrizione',
     hasWhatsapp: true, hasGoogleMaps: true, hasContactForm: true, hasContactPage: true,
     hasEmailOnSite: true, hasPhoneOnSite: true, hasSocialLinks: true, textLength: 1000,
     loadError: null, ...over,
@@ -46,9 +46,13 @@ console.log('\n[1] Scoring')
   }))
   check('worst reachable site → capped at 10 / HIGH / weak_website', worst.opportunityScore === 10 && worst.priority === 'HIGH' && worst.segment === 'weak_website')
 
-  // HTTP>=400 adds +2
+  // HTTP>=400 (server error) adds +2
   const http500 = scoreLead(true, analysis({ httpStatus: 500 }))
   check('HTTP 500 adds +2 over base (=4)', http500.opportunityScore === 4)
+
+  // anti-bot block (403/401/429) → not a false 10/10, flagged for manual review
+  const blocked = scoreLead(true, analysis({ httpStatus: 403 }))
+  check('HTTP 403 → blocked / score 0 / LOW', blocked.opportunityScore === 0 && blocked.priority === 'LOW' && blocked.segment === 'blocked')
 
   check('priority boundaries 7/6/4/3', toPriority(7) === 'HIGH' && toPriority(6) === 'MEDIUM' && toPriority(4) === 'MEDIUM' && toPriority(3) === 'LOW')
 }

@@ -45,6 +45,21 @@ export function scoreLead(
     }
   }
 
+  // 2b) Website up but it blocked our crawler (anti-bot / WAF): we can't judge it.
+  //     Don't invent problems or a false 10/10 — flag for manual review.
+  const blockedStatuses = [401, 403, 406, 429]
+  if (analysis && analysis.httpStatus != null && blockedStatuses.includes(analysis.httpStatus)) {
+    return {
+      opportunityScore: 0,
+      priority: 'LOW',
+      detectedProblems: [
+        `Analisi automatica bloccata dal sito (HTTP ${analysis.httpStatus}) — controlla a mano`,
+      ],
+      segment: 'blocked',
+      mainProblem: '',
+    }
+  }
+
   // 3) Website present & reachable — additive
   const a = analysis as SiteAnalysis
   let score = 2
@@ -58,9 +73,9 @@ export function scoreLead(
     score += 1
     problems.push('Manca HTTPS (sito non sicuro)')
   }
-  if (!a.pageTitle) {
+  if (!a.pageTitle || a.pageTitle.trim().length < 5) {
     score += 1
-    problems.push('Manca il titolo della pagina')
+    problems.push('Titolo pagina assente o generico')
   }
   if (!a.metaDescription) {
     score += 1
@@ -110,12 +125,12 @@ export function toPriority(score: number): Priority {
 
 /** Pick the most compelling problem to open a message with (v1 _get_main_problem_phrase). */
 function mainProblemPhrase(problems: string[]): string {
-  // priority order of "hooks"
+  // priority order of "hooks" — most damaging first
   const order = [
+    ['errore', 'il vostro sito al momento mostra un errore e non si apre ai clienti'],
     ['Nessun form di contatto', 'è difficile per un cliente contattarvi dal sito'],
     ['Nessun contatto WhatsApp', 'manca un contatto WhatsApp, oggi il canale più usato'],
     ['Manca HTTPS', 'il sito non è sicuro (manca HTTPS) e Google lo penalizza'],
-    ['errore', 'il sito mostra un errore a chi lo visita'],
     ['Poco contenuto', 'il sito ha pochissimo contenuto'],
     ['Manca la meta', 'il sito è poco ottimizzato per Google'],
     ['Nessuna pagina contatti', 'manca una pagina contatti chiara'],

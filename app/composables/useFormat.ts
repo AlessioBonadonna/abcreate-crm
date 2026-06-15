@@ -27,6 +27,7 @@ export function useFormat() {
       case 'no_website': return 'Senza sito'
       case 'weak_website': return 'Sito debole'
       case 'decent_website': return 'Sito discreto'
+      case 'blocked': return 'Da verificare'
       default: return '—'
     }
   }
