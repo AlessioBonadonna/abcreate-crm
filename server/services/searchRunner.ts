@@ -14,6 +14,7 @@ export interface SearchOptions {
   analyzeSites: boolean
   excludeChains: boolean
   onlyWithoutWebsite: boolean
+  onlyContactable: boolean
   minScore: number
   usePlaces: boolean
 }
@@ -25,6 +26,7 @@ export interface SearchOptions {
  */
 export async function runSearch(runId: string, opts: SearchOptions): Promise<void> {
   const settings = await getMessageSettings()
+  const templates = await prisma.messageTemplate.findMany()
   const delayMs = await getDelayMs()
 
   const setProgress = async (progress: number, message: string) => {
@@ -73,7 +75,7 @@ export async function runSearch(runId: string, opts: SearchOptions): Promise<voi
     // ---- 3. persist (skip leads already in DB, by dedupKey) ----
     await setProgress(72, `Salvataggio di ${unique.length} risultati…`)
     let newCount = 0
-    const toProcess: { id: string; lead: RawLead }[] = []
+    let toProcess: { id: string; lead: RawLead }[] = []
 
     for (const [dedupKey, lead] of unique) {
       const existing = await prisma.lead.findUnique({ where: { dedupKey } })
@@ -123,6 +125,19 @@ export async function runSearch(runId: string, opts: SearchOptions): Promise<voi
       }
     }
 
+    // ---- 4b. drop leads with no contact channel (after enrichment) ----
+    if (opts.onlyContactable) {
+      const reachable = ({ lead }: { lead: RawLead }) =>
+        !!(lead.phone || lead.email || lead.website)
+      const unreachable = toProcess.filter((t) => !reachable(t))
+      if (unreachable.length > 0) {
+        await setProgress(73, `Scarto ${unreachable.length} lead senza recapito…`)
+        await prisma.lead.deleteMany({ where: { id: { in: unreachable.map((u) => u.id) } } })
+        toProcess = toProcess.filter(reachable)
+        newCount -= unreachable.length
+      }
+    }
+
     // ---- 5. analyze + score + generate message (new leads only) ----
     let i = 0
     for (const { id, lead } of toProcess) {
@@ -139,6 +154,7 @@ export async function runSearch(runId: string, opts: SearchOptions): Promise<voi
         { businessName: lead.businessName, category: lead.category, segment: score.segment, mainProblem: score.mainProblem },
         score,
         settings,
+        templates,
       )
 
       await prisma.lead.update({

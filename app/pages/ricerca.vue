@@ -10,6 +10,7 @@ const selectedCats = ref<string[]>([])
 const analyzeSites = ref(true)
 const excludeChains = ref(true)
 const onlyWithoutWebsite = ref(false)
+const onlyContactable = ref(true)
 const usePlaces = ref(false)
 const minScore = ref(0)
 
@@ -54,6 +55,7 @@ async function start() {
         analyzeSites: analyzeSites.value,
         excludeChains: excludeChains.value,
         onlyWithoutWebsite: onlyWithoutWebsite.value,
+        onlyContactable: onlyContactable.value,
         minScore: minScore.value,
         usePlaces: usePlaces.value,
       },
@@ -136,6 +138,9 @@ function errMsg(e: unknown): string {
         </label>
         <label class="flex items-center gap-2 text-sm text-slate-700">
           <input v-model="onlyWithoutWebsite" type="checkbox" class="rounded" /> Solo senza sito
+        </label>
+        <label class="flex items-center gap-2 text-sm text-slate-700">
+          <input v-model="onlyContactable" type="checkbox" class="rounded" /> Solo contattabili (telefono/email/sito)
         </label>
         <label class="flex items-center gap-2 text-sm text-slate-700">
           <input v-model="usePlaces" type="checkbox" class="rounded" /> Usa Google Places (se configurato)

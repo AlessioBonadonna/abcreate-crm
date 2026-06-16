@@ -14,10 +14,12 @@ export default defineEventHandler(async (event) => {
   const analysis = lead.website ? await analyzeWebsite(lead.website) : null
   const score = scoreLead(!!lead.website, analysis)
   const settings = await getMessageSettings()
+  const templates = await prisma.messageTemplate.findMany()
   const msgs = generateMessages(
     { businessName: lead.businessName, category: lead.category, segment: score.segment, mainProblem: score.mainProblem },
     score,
     settings,
+    templates,
   )
 
   const updated = await prisma.lead.update({

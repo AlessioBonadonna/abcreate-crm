@@ -19,6 +19,40 @@ export interface MessageLead {
   mainProblem?: string
 }
 
+/** A reusable outreach template (a row from MessageTemplate), with {{placeholder}} tokens. */
+export interface OutreachTemplate {
+  segment: string | null
+  channel: string | null
+  subject: string | null
+  body: string
+}
+
+/**
+ * Replace `{{ token }}` placeholders (any inner spacing) with known values.
+ * Unknown tokens are left untouched so typos stay visible to the user.
+ */
+function renderTemplate(text: string, values: Record<string, string>): string {
+  return text.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (match, key: string) =>
+    Object.prototype.hasOwnProperty.call(values, key) ? values[key]! : match,
+  )
+}
+
+/** Pick the best template for a channel+segment: exact segment first, then a segment-less wildcard. */
+function pickTemplate(
+  templates: OutreachTemplate[],
+  channel: 'WhatsApp' | 'Email',
+  segment: string,
+): OutreachTemplate | null {
+  const sameChannel = templates.filter(
+    (t) => (t.channel ?? '').toLowerCase() === channel.toLowerCase(),
+  )
+  return (
+    sameChannel.find((t) => t.segment === segment) ??
+    sameChannel.find((t) => !t.segment) ??
+    null
+  )
+}
+
 /** Per-category value hook — why a good web presence matters for that trade. */
 const CATEGORY_HOOKS: Record<string, string> = {
   cleaning: 'chi cerca un’impresa di pulizie affidabile parte sempre da una ricerca online',
@@ -48,7 +82,7 @@ function portfolioPhrase(s: MessageSettings): string {
  * with corrected AB Create pricing (Landing €400 · Vetrina €700 · Gestionale €800+)
  * and a soft, problem-first opening (price arrives last).
  */
-export function generateMessages(
+function buildDefaultMessages(
   lead: MessageLead,
   score: Pick<ScoreResult, 'segment' | 'mainProblem'>,
   settings: MessageSettings,
@@ -67,13 +101,13 @@ export function generateMessages(
     const waSoft = [
       `Ciao ${lead.businessName}, ${hook}.`,
       `Mi occupo di siti e mini-gestionali per attività come la vostra — esempi: ${portfolio}.`,
-      `Se vi serve una mano per migliorare il sito o aggiungere funzioni (prenotazioni, ordini, gestionale su misura), vi preparo due idee senza impegno.`,
+      `Se vi serve una mano per migliorare il sito o aggiungere funzioni (prenotazioni, ordini, gestionale su misura), vi preparo un'idea su misura, senza impegno.`,
       `— ${settings.senderName}`,
     ].join('\n\n')
     const emailSoft = [
       `Salve,`,
       `mi occupo di siti e piccoli gestionali per attività locali come ${lead.businessName}.`,
-      `Se vi serve una mano per migliorare o rifare il sito, o per aggiungere funzioni (prenotazioni, ordini online, un gestionale su misura), posso prepararvi due proposte senza impegno. Qualche lavoro: ${portfolio}.`,
+      `Se vi serve una mano per migliorare o rifare il sito, o per aggiungere funzioni (prenotazioni, ordini online, un gestionale su misura), posso prepararvi una proposta senza impegno. Qualche lavoro: ${portfolio}.`,
       `Un saluto,\n${settings.senderName}`,
     ].join('\n\n')
     return { whatsapp: waSoft, email: { subject: `Una mano per il sito di ${lead.businessName}`, body: emailSoft } }
@@ -97,7 +131,7 @@ export function generateMessages(
     problemLine,
     `Mi occupo di siti e mini-gestionali per attività come la vostra — esempi: ${portfolio}.`,
     priceLine,
-    `Se vi va vi mando due idee su misura, senza impegno.`,
+    `Se vi va vi mando un'idea su misura, senza impegno.`,
     `— ${settings.senderName}`,
   ].join('\n\n')
 
@@ -122,9 +156,54 @@ export function generateMessages(
     emailProblem,
     `Sviluppo siti e piccoli gestionali per attività locali: cose semplici, veloci e curate. Qualche lavoro: ${portfolio}.`,
     emailPrice,
-    `Se le fa piacere preparo due proposte concrete senza impegno — mi basta un suo cenno.`,
+    `Se le fa piacere preparo una proposta concreta senza impegno — mi basta un suo cenno.`,
     `Un saluto,\n${settings.senderName}`,
   ].join('\n\n')
 
   return { whatsapp, email: { subject, body } }
+}
+
+/**
+ * Generate outreach for a lead. If matching user templates exist (by channel + segment),
+ * they are rendered with the lead's placeholders; otherwise the built-in copy is used.
+ * Each channel falls back independently, so a WhatsApp-only template still gets a default email.
+ */
+export function generateMessages(
+  lead: MessageLead,
+  score: Pick<ScoreResult, 'segment' | 'mainProblem'>,
+  settings: MessageSettings,
+  templates: OutreachTemplate[] = [],
+): GeneratedMessages {
+  const fallback = buildDefaultMessages(lead, score, settings)
+  if (templates.length === 0) return fallback
+
+  const segment = score.segment ?? lead.segment ?? 'weak_website'
+  const cat = CATEGORY_BY_KEY[lead.category]
+  const values: Record<string, string> = {
+    business: lead.businessName,
+    businessName: lead.businessName,
+    sender: settings.senderName,
+    problem: score.mainProblem ?? lead.mainProblem ?? '',
+    mainProblem: score.mainProblem ?? lead.mainProblem ?? '',
+    category: cat?.label ?? 'attività',
+    hook: CATEGORY_HOOKS[lead.category] ?? 'oggi i clienti cercano i servizi locali prima di tutto online',
+    portfolio: portfolioPhrase(settings),
+    priceLanding: settings.priceLanding,
+    priceVetrina: settings.priceVetrina,
+    priceGestionale: settings.priceGestionale,
+    deliveryWeeks: settings.deliveryWeeks,
+  }
+
+  const wa = pickTemplate(templates, 'WhatsApp', segment)
+  const em = pickTemplate(templates, 'Email', segment)
+
+  return {
+    whatsapp: wa ? renderTemplate(wa.body, values) : fallback.whatsapp,
+    email: em
+      ? {
+          subject: renderTemplate(em.subject ?? fallback.email.subject, values),
+          body: renderTemplate(em.body, values),
+        }
+      : fallback.email,
+  }
 }

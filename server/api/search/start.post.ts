@@ -8,6 +8,7 @@ const bodySchema = z.object({
   analyzeSites: z.boolean().default(true),
   excludeChains: z.boolean().default(true),
   onlyWithoutWebsite: z.boolean().default(false),
+  onlyContactable: z.boolean().default(false),
   minScore: z.number().int().min(0).max(10).default(0),
   usePlaces: z.boolean().default(false),
 })
