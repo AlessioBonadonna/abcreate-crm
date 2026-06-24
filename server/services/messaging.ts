@@ -95,6 +95,42 @@ function buildDefaultMessages(
   const problem = score.mainProblem ?? lead.mainProblem ?? 'ci sono margini di miglioramento sul sito'
   const weeks = settings.deliveryWeeks
 
+  // --- PARTNER path: web agency / studio / accountant. White-label pitch, NOT
+  //     a "your site has problems" pitch. Peer-to-peer, focused on their gain. ---
+  if (segment === 'partner' || segment === 'partner_weak') {
+    const isAccountant = lead.category === 'accountant'
+    const waPartner = isAccountant
+      ? [
+          `Salve, sono ${settings.senderName} — sviluppo siti e piccoli gestionali su misura per PMI (esempi: ${portfolio}).`,
+          `Vi scrivo perché molti vostri clienti prima o poi chiedono "mi serve un sito / un gestionale": se vi capita, posso occuparmene io a condizioni riservate, voi restate il loro punto di riferimento.`,
+          `Se può interessare vi giro due righe e il listino. Grazie!`,
+        ].join('\n\n')
+      : [
+          `Ciao, sono ${settings.senderName}: sviluppo siti e mini-gestionali su misura (Nuxt/Vue).`,
+          `Lavoro in white-label per agenzie: i progetti piccoli che non vi conviene fare internamente li sviluppo io sotto il vostro nome, in 1-2 settimane. Voi tenete il cliente, io scrivo il codice.`,
+          `Se vi va vi giro il listino partner riservato. Esempi di lavori: ${portfolio}.`,
+        ].join('\n\n')
+    const emailPartner = isAccountant
+      ? [
+          `Salve,`,
+          `sono ${settings.senderName}, sviluppo siti e piccoli gestionali su misura per PMI locali (qualche lavoro: ${portfolio}).`,
+          `Spesso i clienti di uno studio chiedono un sito o un piccolo gestionale: se le capita, posso occuparmene io a condizioni riservate, mantenendo lei come riferimento del cliente. Per voi è un servizio in più da offrire senza lavoro aggiuntivo.`,
+          `Se le fa piacere le mando il listino riservato in due righe.`,
+          `Un saluto,\n${settings.senderName}`,
+        ].join('\n\n')
+      : [
+          `Salve,`,
+          `sono ${settings.senderName}, sviluppo siti e mini-gestionali su misura (Nuxt/Vue). Vi scrivo a voi e non a un cliente finale: lavoro in white-label per agenzie.`,
+          `I progetti piccoli — landing, siti vetrina, gestionalini — quelli che spesso non vi conviene fare internamente o che siete costretti a rifiutare, li sviluppo io per voi, sotto il vostro nome. Voi tenete il cliente e il rapporto, io consegno il codice in 1-2 settimane. Per voi è margine su lavoro che oggi rifiutate, senza occupare i vostri sviluppatori.`,
+          `Se può avere senso vi giro il listino partner riservato. Qualche lavoro: ${portfolio}.`,
+          `A presto,\n${settings.senderName}`,
+        ].join('\n\n')
+    const subjectPartner = isAccountant
+      ? `Sviluppo siti/gestionali per i vostri clienti (condizioni riservate)`
+      : `Sviluppo white-label per i progetti piccoli che scartate`
+    return { whatsapp: waPartner, email: { subject: subjectPartner, body: emailPartner } }
+  }
+
   // --- soft path: site already decent, or we couldn't analyze it (blocked) ---
   // Never claim problems we didn't actually observe.
   if (segment === 'decent_website' || segment === 'blocked') {

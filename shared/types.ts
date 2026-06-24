@@ -24,6 +24,12 @@ export interface CategoryDef {
   placesQuery: string
   /** Keywords used to narrow broad tags (e.g. office=company) — ported from v1. */
   keywords?: string[]
+  /**
+   * Target kind. 'client' = final business that might buy a site (legacy default).
+   * 'partner' = web agency / studio / accountant we want to PARTNER with
+   * (white-label / overflow / referral). Scoring is inverted for partners.
+   */
+  kind?: 'client' | 'partner'
 }
 
 /** Raw lead as returned by a LeadProvider, before persistence. */

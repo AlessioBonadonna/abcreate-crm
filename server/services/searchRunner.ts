@@ -1,8 +1,9 @@
 import type { RawLead } from '~~/shared/types'
+import { CATEGORY_BY_KEY } from '~~/shared/constants'
 import { prisma } from '../utils/prisma'
 import { buildDedupKey } from './dedup'
 import { analyzeWebsite } from './analyzer'
-import { scoreLead } from './scoring'
+import { scoreLead, scorePartnerLead } from './scoring'
 import { generateMessages } from './messaging'
 import { getMessageSettings } from './settings'
 import { getOsmProvider, getPlacesProvider } from './providers'
@@ -149,7 +150,10 @@ export async function runSearch(runId: string, opts: SearchOptions): Promise<voi
         )
       }
       const analysis = opts.analyzeSites && lead.website ? await analyzeWebsite(lead.website) : null
-      const score = scoreLead(!!lead.website, analysis)
+      const isPartner = CATEGORY_BY_KEY[lead.category]?.kind === 'partner'
+      const score = isPartner
+        ? scorePartnerLead(!!lead.website, analysis)
+        : scoreLead(!!lead.website, analysis)
       const msgs = generateMessages(
         { businessName: lead.businessName, category: lead.category, segment: score.segment, mainProblem: score.mainProblem },
         score,

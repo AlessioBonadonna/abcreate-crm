@@ -117,6 +117,52 @@ export function scoreLead(
   }
 }
 
+/**
+ * Scoring for PARTNER targets (web agencies, studios, accountants).
+ * Logic is inverted vs. scoreLead: a real, reachable, well-built site is a
+ * GOOD signal (a structured studio that likely outsources small jobs).
+ * `detectedProblems` is repurposed to hold positive signals for the UI.
+ */
+export function scorePartnerLead(
+  hasWebsite: boolean,
+  analysis: SiteAnalysis | null,
+): ScoreResult {
+  if (!hasWebsite) {
+    return {
+      opportunityScore: 3,
+      priority: toPriority(3),
+      detectedProblems: ['Nessun sito — studio poco strutturato o dato mancante'],
+      segment: 'partner_weak',
+      mainProblem: '',
+    }
+  }
+  const unreachable = !analysis || (analysis.loadError != null && analysis.httpStatus == null)
+  if (unreachable) {
+    return {
+      opportunityScore: 4,
+      priority: toPriority(4),
+      detectedProblems: ['Sito non raggiungibile durante l’analisi — verifica a mano'],
+      segment: 'partner',
+      mainProblem: '',
+    }
+  }
+  const a = analysis as SiteAnalysis
+  const signals: string[] = ['Agenzia/studio reale con sito attivo']
+  let score = 6
+  if (a.hasHttps) { score += 1; signals.push('Sito sicuro (HTTPS)') }
+  if (a.hasSocialLinks) { score += 1; signals.push('Presenza social attiva') }
+  if (a.textLength >= 800) { score += 1; signals.push('Sito strutturato (buon contenuto)') }
+  if (a.hasContactForm || a.hasEmailOnSite) { score += 1; signals.push('Contatto diretto disponibile') }
+  score = Math.min(score, 10)
+  return {
+    opportunityScore: score,
+    priority: toPriority(score),
+    detectedProblems: signals,
+    segment: 'partner',
+    mainProblem: '',
+  }
+}
+
 export function toPriority(score: number): Priority {
   if (score >= 7) return 'HIGH'
   if (score >= 4) return 'MEDIUM'

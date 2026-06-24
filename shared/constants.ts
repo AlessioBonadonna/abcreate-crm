@@ -19,6 +19,34 @@ export const CATEGORIES: CategoryDef[] = [
   { key: 'real_estate', label: 'Agenzia immobiliare', osmTags: ['office=estate_agent'], placesQuery: 'agenzia immobiliare' },
   { key: 'barber', label: 'Barbiere', osmTags: ['shop=barber'], placesQuery: 'barbiere' },
   { key: 'dentist', label: 'Dentista', osmTags: ['amenity=dentist'], placesQuery: 'studio dentistico' },
+
+  // -------------------------------------------------------------------------
+  // PARTNER targets (white-label / overflow / referral). kind: 'partner'.
+  // For these the website is a GOOD sign, not a reason to discard. Keep
+  // `onlyWithoutWebsite` OFF and `minScore` at 0 when searching these.
+  // -------------------------------------------------------------------------
+  {
+    key: 'web_agency',
+    label: 'Web agency / sviluppo siti',
+    kind: 'partner',
+    osmTags: ['office=it', 'office=web_design', 'office=company'],
+    keywords: ['web', 'digital', 'software', 'sviluppo', 'siti', 'informatic', 'agenzia', 'comunicazione', 'design'],
+    placesQuery: 'agenzia web sviluppo siti',
+  },
+  {
+    key: 'comm_studio',
+    label: 'Studio comunicazione / marketing',
+    kind: 'partner',
+    osmTags: ['office=advertising_agency', 'office=graphic_design', 'office=marketing'],
+    placesQuery: 'studio comunicazione marketing',
+  },
+  {
+    key: 'accountant',
+    label: 'Commercialista indipendente',
+    kind: 'partner',
+    osmTags: ['office=accountant', 'office=tax_advisor'],
+    placesQuery: 'commercialista studio commercialista',
+  },
 ]
 
 export const CATEGORY_BY_KEY: Record<string, CategoryDef> = Object.fromEntries(
@@ -65,6 +93,21 @@ export const KNOWN_CHAINS: Record<string, string[]> = {
   dentist: [
     'denti più', 'dentalmed', 'dentalpro', 'ortodonzia italiana',
     'odontoiatria italia', 'vitaldent',
+  ],
+  // Partner blocklists: exclude big networks / online franchises so only the
+  // small, local, "outsourceable" studios remain.
+  web_agency: [
+    'accenture', 'deloitte', 'reply', 'engineering ingegneria', 'ibm',
+    'ntt data', 'capgemini', 'wpp', 'publicis', 'aruba', 'register.it',
+    'fiverr', 'upwork',
+  ],
+  comm_studio: [
+    'publicis', 'ogilvy', 'wpp', 'havas', 'mccann', 'leo burnett',
+    'saatchi', 'accenture song',
+  ],
+  accountant: [
+    'fiscozen', 'taxfix', 'fiscomed', 'fiscalfocus', 'fiscal focus',
+    'danea', 'commercialista.it',
   ],
 }
 
